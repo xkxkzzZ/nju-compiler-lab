@@ -10,7 +10,27 @@ static CPValue meetValue(CPValue v1, CPValue v2) {
      * 计算不同数据流数据汇入后变量的CPValue的meet值
      * 要考虑 UNDEF/CONST/NAC 的不同情况
      */
-    TODO();
+    // TODO();
+
+    // SPA Lab2 meetValue
+    // NAC ⊓ v = NAC
+    // UNDEF ⊓ v = v
+    // c ⊓ c = c
+    // c1 ⊓ c2 = NAC
+
+    if (v1.kind == NAC || v2.kind == NAC) {
+        return get_NAC();
+    }
+    if (v1.kind == UNDEF) {
+        return v2;
+    }
+    if (v2.kind == UNDEF) {
+        return v1;
+    }
+    if (v1.const_val == v2.const_val) {
+        return v1;
+    }
+    return get_NAC();
 }
 
 static CPValue calculateValue(IR_OP_TYPE IR_op_type, CPValue v1, CPValue v2) {
@@ -32,7 +52,41 @@ static CPValue calculateValue(IR_OP_TYPE IR_op_type, CPValue v1, CPValue v2) {
      *      return get_CONST(res_const);
      *  } ... 其他情况
      */
-    TODO();
+    // TODO();
+
+
+    // SPA Lab2 evaluate
+    // s: x = c;    gen = {(x, c)}
+    // s: x = y;    gen = {(x, val(y))}
+    // s: x = y op z;   gen = {(x, f(y,z))}
+    // f(y,z) =  val(y) op val(z) // if val(y) and val(z) are constants
+    //           NAC    // if val(y) or val(z) is NAC
+    //           UNDEF  // otherwise
+
+    if (v1.kind == NAC || v2.kind == NAC){
+        return get_NAC();
+    }
+    if (v1.kind == UNDEF || v2.kind == UNDEF){
+        return get_UNDEF();
+    }
+    int v1_const = v1.const_val, v2_const = v2.const_val, res_const=0;
+    switch (IR_op_type){
+    case IR_OP_ADD:
+        res_const = v1_const + v2_const;
+        break;
+    case IR_OP_SUB:
+        res_const = v1_const - v2_const;
+        break;
+    case IR_OP_MUL:
+        res_const = v1_const * v2_const;
+        break;
+    case IR_OP_DIV:
+        res_const = v1_const / v2_const;
+        break;
+    default:
+        break;
+    }
+    return get_CONST(res_const);
 }
 
 // UNDEF等价为在Map中不存在该Var的映射项
@@ -79,7 +133,8 @@ static void ConstantPropagation_teardown(ConstantPropagation *t) {
 static bool
 ConstantPropagation_isForward (ConstantPropagation *t) {
     // TODO: return isForward?;
-    TODO();
+    // TODO();
+    return true;
 }
 
 static Map_IR_var_CPValue*
@@ -90,7 +145,9 @@ ConstantPropagation_newBoundaryFact (ConstantPropagation *t, IR_function *func) 
      * for_vec(IR_var, param_ptr, func->params)
      *     VCALL(*fact, insert, *param_ptr, get_UNDEF/CONST/NAC?());
      */
-    TODO();
+    // TODO();
+    for_vec(IR_var, param_ptr, func->params)
+        VCALL(*fact, insert, *param_ptr, get_NAC());
     return fact;
 }
 
@@ -143,7 +200,8 @@ void ConstantPropagation_transferStmt (ConstantPropagation *t,
         /* TODO: solve IR_ASSIGN_STMT
          * Fact_update_value/Fact_meet_value?(...);
          */
-        TODO();
+        // TODO();
+        Fact_update_value(fact, def, use_val);
     } else if(stmt->stmt_type == IR_OP_STMT) {
         IR_op_stmt *op_stmt = (IR_op_stmt*)stmt;
         IR_OP_TYPE IR_op_type = op_stmt->op;
@@ -153,14 +211,17 @@ void ConstantPropagation_transferStmt (ConstantPropagation *t,
         /* TODO: solve IR_OP_STMT
          * Fact_update_value/Fact_meet_value?(...,calculateValue(...));
          */
-        TODO();
+        // TODO();
+        CPValue res_val = calculateValue(IR_op_type, rs1_val, rs2_val);
+        Fact_update_value(fact, def, res_val);
     } else { // Other Stmt with new_def
         IR_var def = VCALL(*stmt, get_def);
         if(def != IR_VAR_NONE) {
             /* TODO: solve stmt with new_def
              * Fact_update_value/Fact_meet_value?(...);
              */
-            TODO();
+            // TODO();
+            Fact_update_value(fact, def, get_UNDEF());
         }
     }
 }
